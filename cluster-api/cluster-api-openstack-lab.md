@@ -2,8 +2,6 @@
 
 This experiment lab is used to using Cluster API to create a K8S Cluster on OpenStack Cloud
 
-
-
 ## Environment
 
 ### OpenStack
