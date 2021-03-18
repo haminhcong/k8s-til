@@ -33,7 +33,7 @@ Install `clusterctl`
 
 Install Cluster API OpenStack Cloud Provider
 
-```log
+```bash
 clusterctl init --infrastructure openstack
 ```
 
@@ -64,8 +64,8 @@ Export another required enviroment variables to bash env:
 # Set this value when you need create a new network/subnet while the access through DNS is required.
 export OPENSTACK_DNS_NAMESERVERS=8.8.8.8
 export OPENSTACK_FAILURE_DOMAIN=nova
-export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR=m1.small
-export OPENSTACK_NODE_MACHINE_FLAVOR=m1.small
+export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR=m1.large 
+export OPENSTACK_NODE_MACHINE_FLAVOR=m1.large
 export OPENSTACK_IMAGE_NAME=ubuntu-20-04-cluster-api-base-img.qcow2 
 export OPENSTACK_SSH_KEY_NAME=cloud-user-1-key-pair 
 ```
@@ -218,6 +218,102 @@ Status:
 Events:                    <none>
 
 ```
+
+
+### Verifying
+
+```shell
+
+[cloud@bastion01 cluster-api]$ kubectl get cluster --all-namespaces
+NAMESPACE   NAME        PHASE
+default     cluster-1   Provisioned
+[cloud@bastion01 cluster-api]$ kubectl describe cluster cluster-1
+Name:         cluster-1
+Namespace:    default
+Labels:       <none>
+Annotations:  <none>
+API Version:  cluster.x-k8s.io/v1alpha3
+Kind:         Cluster
+Metadata:
+  Creation Timestamp:  2021-03-18T16:14:23Z
+  Finalizers:
+    cluster.cluster.x-k8s.io
+  Generation:  2
+  Managed Fields:
+    API Version:  cluster.x-k8s.io/v1alpha3
+    Fields Type:  FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:annotations:
+          .:
+          f:kubectl.kubernetes.io/last-applied-configuration:
+      f:spec:
+
+
+[cloud@bastion01 kubectl -n capo-system logs -l control-plane=capo-controller-manager -c manager
+
+I0318 18:17:58.796234       1 loadbalancer.go:541] controllers/OpenStackCluster "msg"="Waiting for loadbalancer" "cluster"="cluster-1" "namespace"="default" "openStackCluster"="cluster-1" "id"="f1f9280e-7bc7-4f66-9302-7b373f56010d" "targetStatus"="ACTIVE"
+I0318 18:17:58.942933       1 loadbalancer.go:541] controllers/OpenStackCluster "msg"="Waiting for loadbalancer" "cluster"="cluster-1" "namespace"="default" "openStackCluster"="cluster-1" "id"="f1f9280e-7bc7-4f66-9302-7b373f56010d" "targetStatus"="ACTIVE"
+I0318 18:17:59.106384       1 openstackcluster_controller.go:294] controllers/OpenStackCluster "msg"="Reconciled Cluster create successfully" "cluster"="cluster-1" "namespace"="default" "openStackCluster"="cluster-1" 
+I0318 18:22:35.937965       1 openstackmachine_controller.go:353] controllers/OpenStackMachine "msg"="Reconciling Machine create started" "cluster"="cluster-1" "machine"="cluster-1-control-plane-jb4wl" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-control-plane-6zbh7" 
+I0318 18:22:35.938182       1 openstackmachine_controller.go:353] controllers/OpenStackMachine "msg"="Reconciling Machine create started" "cluster"="cluster-1" "machine"="cluster-1-md-0-8688c884d4-sjzw6" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-md-0-wgbn4" 
+I0318 18:22:36.529210       1 openstackmachine_controller.go:405] controllers/OpenStackMachine "msg"="Machine instance is ACTIVE" "cluster"="cluster-1" "machine"="cluster-1-control-plane-jb4wl" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-control-plane-6zbh7" "instance-id"="7fea4b4a-ab97-4370-8959-573277312497"
+I0318 18:22:36.529278       1 loadbalancer.go:217] controllers/OpenStackMachine "msg"="Reconciling loadbalancer" "cluster"="cluster-1" "machine"="cluster-1-control-plane-jb4wl" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-control-plane-6zbh7" "name"="k8s-clusterapi-cluster-default-cluster-1-kubeapi"
+I0318 18:22:36.576566       1 openstackmachine_controller.go:405] controllers/OpenStackMachine "msg"="Machine instance is ACTIVE" "cluster"="cluster-1" "machine"="cluster-1-md-0-8688c884d4-sjzw6" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-md-0-wgbn4" "instance-id"="f03520b0-f7f5-4a59-a36b-dd18c2e65fe6"
+I0318 18:22:36.576603       1 openstackmachine_controller.go:433] controllers/OpenStackMachine "msg"="Reconciled Machine create successfully" "cluster"="cluster-1" "machine"="cluster-1-md-0-8688c884d4-sjzw6" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-md-0-wgbn4" 
+I0318 18:22:36.774826       1 openstackmachine_controller.go:433] controllers/OpenStackMachine "msg"="Reconciled Machine create successfully" "cluster"="cluster-1" "machine"="cluster-1-control-plane-jb4wl" "namespace"="default" "openStackCluster"="cluster-1" "openStackMachine"="cluster-1-control-plane-6zbh7" 
+
+
+[cloud@bastion01 cluster-api]$ kubectl get cluster --all-namespaces
+NAMESPACE   NAME        PHASE
+default     cluster-1   Provisioned
+[cloud@bastion01 cluster-api]$ kubectl get kubeadmcontrolplane --all-namespaces
+NAMESPACE   NAME                      INITIALIZED   API SERVER AVAILABLE   VERSION    REPLICAS   READY   UPDATED   UNAVAILABLE
+default     cluster-1-control-plane   true                                 v1.18.16   1                  1         1
+[cloud@bastion01 cluster-api]$ clusterctl get kubeconfig cluster-1 > cluster-1.kubeconfig
+
+
+[cloud@bastion01 cluster-api]$ kubectl --kubeconfig=./cluster-1.kubeconfig get nodes
+NAME                            STATUS     ROLES    AGE     VERSION
+cluster-1-control-plane-6zbh7   NotReady   master   19m     v1.18.15
+cluster-1-md-0-wgbn4            NotReady   <none>   9m48s   v1.18.15
+
+<Missing CNI>
+
+```
+
+## Workload Cluster Intialization Process:
+
+- Create Private Network/Subnet/DNS Nameservers
+- Create Router between Private Network and External Network
+- Create Load Balancer, assign Floating IP to Load Balancer
+- Create Master Node, then Cloud Init run bootstrap controller on Master Node   => Cluster API Controller wait for Master Endpoint to available
+- Create Worker Node, then Cloud Init run bootstrap worker on Worker Node.
+
+## Workload Cluster Features
+
+- CNI: No
+- Monitoring: No
+- Logging: No
+- Backup etcd data mechanism: Not Tested
+
+## Workload Cluster Features
+
+- Auto provision Controller/Worker VMs: Yes
+- Cluster Resizable: Yes
+- Manual Replace Unhealthy Nodes: Not Tested
+- Auto Replace Unhealthy Nodes: Not Tested
+- Upgrade Cluster to new Version: Not Tested
+
+## Workload Cluster Screenshot
+
+![alt text](./images/openstack-Load-Balancers.png)
+![alt text](./images/openstack-network-topology.png)
+![alt text](./images/openstack-Instances.png)
+![alt text](./images/openstack-networks.png)
+![alt text](./images/openstack-images.png)
+![alt text](./images/openstack-volumes.png)
+
 
 ## Troubleshooting
 
