@@ -1,0 +1,44 @@
+- name: Install wget
+  yum:
+    name: wget
+    state: present
+  become: yes
+- name: Install vim
+  yum:
+    name: vim
+    state: present
+  become: yes
+- name: Install telnet
+  yum:
+    name: telnet
+    state: present
+  become: yes
+
+- name: Hosts | create list from inventory
+  set_fact:
+    etc_hosts_inventory_block: |-
+      {% for item in (groups['cluster_nodes'] |default([]))|unique -%}
+      {% if 'ansible_host' in hostvars[item] or 'ip' in hostvars[item] or 'ansible_default_ipv4' in hostvars[item] -%}
+      {{ hostvars[item]['ansible_host'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }}
+      {%- if ('ansible_hostname' in hostvars[item] and item != hostvars[item]['ansible_hostname']) %} {{ hostvars[item]['ansible_hostname'] }}.{{ dns_domain }} {{ hostvars[item]['ansible_hostname'] }}{% endif %} {{ item }}
+      {% endif %}
+      {% endfor %}
+  delegate_to: localhost
+  connection: local
+  delegate_facts: yes
+  run_once: yes
+
+- name: check hostfile content
+  debug:
+    var:  hostvars.localhost.etc_hosts_inventory_block
+
+- name: Hosts | populate inventory into hosts file
+  blockinfile:
+    path: /etc/hosts
+    block: "{{ hostvars.localhost.etc_hosts_inventory_block }}"
+    state: present
+    create: yes
+    backup: yes
+    unsafe_writes: yes
+    marker: "# Ansible inventory hosts {mark}"
+  become: yes
