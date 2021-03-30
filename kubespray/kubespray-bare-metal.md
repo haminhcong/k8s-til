@@ -307,8 +307,56 @@ loadbalancer_apiserver_localhost: false
 ### 5. Run install command:
 
 ```bash
-ansible-playbook -i inventory/cluster-01/inventory.ini --become \
---user=cloud --ask-pass --ask-become-pass --become-user=root cluster.yml
+ansible-playbook -i inventory/cluster-01/inventory.ini --user=cloud --ask-pass --ask-become-pass --become --become-method=su --become-user=root cluster.yml
+```
+
+### 4. Verify
+
+Login to controller01 VM. Check services:
+
+```log
+[root@controller01 cloud]#  kubectl get nodes
+NAME           STATUS   ROLES                  AGE     VERSION
+controller01   Ready    control-plane,master   3m15s   v1.20.5
+controller02   Ready    control-plane,master   2m31s   v1.20.5
+controller03   Ready    control-plane,master   2m14s   v1.20.5
+worker01       Ready    <none>                 64s     v1.20.5
+worker02       Ready    <none>                 64s     v1.20.5
+worker03       Ready    <none>                 64s     v1.20.5
+[root@controller01 cloud]# kubectl get pods -n kube-system
+NAME                                    READY   STATUS    RESTARTS   AGE
+calico-kube-controllers-995b884-wdvg8   1/1     Running   0          33s
+calico-node-dl6zd                       1/1     Running   0          57s
+calico-node-fztmc                       1/1     Running   0          57s
+calico-node-gdrps                       1/1     Running   0          57s
+calico-node-lwlpr                       1/1     Running   0          57s
+calico-node-w8rp2                       1/1     Running   0          57s
+calico-node-x5kxz                       1/1     Running   0          57s
+coredns-657959df74-v29nm                1/1     Running   0          16s
+coredns-657959df74-w72k5                1/1     Running   0          10s
+dns-autoscaler-b5c786945-5wrjf          1/1     Running   0          12s
+kube-apiserver-controller01             1/1     Running   0          3m14s
+kube-apiserver-controller02             1/1     Running   0          2m41s
+kube-apiserver-controller03             1/1     Running   0          2m24s
+kube-controller-manager-controller01    1/1     Running   0          3m26s
+kube-controller-manager-controller02    1/1     Running   0          2m41s
+kube-controller-manager-controller03    1/1     Running   0          2m24s
+kube-proxy-7g85n                        1/1     Running   0          2m25s
+kube-proxy-7mzfz                        1/1     Running   0          2m42s
+kube-proxy-c29qd                        1/1     Running   0          75s
+kube-proxy-f2s6h                        1/1     Running   0          2m59s
+kube-proxy-mpdp5                        1/1     Running   0          75s
+kube-proxy-qrpk7                        1/1     Running   0          75s
+kube-scheduler-controller01             1/1     Running   0          3m26s
+kube-scheduler-controller02             1/1     Running   0          2m41s
+kube-scheduler-controller03             1/1     Running   0          2m24s
+nodelocaldns-f8vqz                      1/1     Running   0          10s
+nodelocaldns-ftfr4                      1/1     Running   0          10s
+nodelocaldns-jc7ks                      1/1     Running   0          10s
+nodelocaldns-jwkvh                      1/1     Running   0          10s
+nodelocaldns-tddz9                      1/1     Running   0          10s
+nodelocaldns-vwvg5                      0/1     Running   0          10s
+
 ```
 
 ## References
