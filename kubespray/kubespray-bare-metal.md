@@ -19,9 +19,9 @@
 
 ## Setup
 
-### 1. Setup K8S Masters
+### For all Nodes
 
-- Setup IP and hostname for K8S Masters
+- Allow ssh login user to su to root and sudo -i
 - Disable firewalld and selinux
   ```bash
   systemctl disable firewalld
@@ -29,6 +29,10 @@
   sudo setenforce 0
   sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
   ```
+
+### 1. Setup K8S Masters
+
+- Setup IP and hostname for K8S Masters
 
 #### Setup HAProxy 
 
@@ -196,24 +200,11 @@ sudo systemctl enable keepalived
 ### 2. Setup Etcd Nodes
 
 - Setup IP and hostname for Etcd Nodes
-- Disable firewalld and selinux
-  ```bash
-  systemctl disable firewalld
-  systemctl stop firewalld
-  sudo setenforce 0
-  sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-  ```
+
 
 ### 3. Setup K8S Workers
 
 - Setup IP and hostname for K8S Workers
-- Disable firewalld and selinux
-  ```bash
-  systemctl disable firewalld
-  systemctl stop firewalld
-  sudo setenforce 0
-  sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-  ```
 
 ### 4. Setup Bastion 
 
